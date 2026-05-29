@@ -1,0 +1,57 @@
+# ── Python / Django ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Entorno virtual
+backend/venv/
+backend/.env
+
+# Base de datos local
+backend/db.sqlite3
+backend/db.sqlite3-journal
+
+# Archivos de media subidos por usuarios
+backend/media/
+
+# Logs
+*.log
+
+# Django migrations (mantener en control de versiones)
+# backend/apps/*/migrations/   ← Sí se suben las migraciones
+
+# ── Node / Angular ────────────────────────────────────────────────────────
+omniworks-ui/node_modules/
+omniworks-ui/dist/
+omniworks-ui/.angular/
+omniworks-ui/*.tgz
+
+# ── Claude Code (configuración local del asistente) ──────────────────────
+.claude/
+
+# ── IDE / Sistema ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Archivos sensibles ────────────────────────────────────────────────────
+*.env
+*.env.local
+*.env.production
+*.pem
+*.key
+
+# ── Coverage / Testing ────────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/

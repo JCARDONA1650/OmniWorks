@@ -1,0 +1,292 @@
+<div class="campaigns-layout fade-in">
+
+  <!-- Nav tabs -->
+  <div class="campaigns-tabs">
+    <button [class.active]="view === 'list'" (click)="view = 'list'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Campañas
+    </button>
+    <button [class.active]="view === 'templates'" (click)="view = 'templates'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Plantillas
+    </button>
+    <button [class.active]="view === 'smtp'" (click)="view = 'smtp'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      SMTP
+    </button>
+    <div class="campaigns-tabs__spacer"></div>
+    <button class="btn btn--primary" style="padding:8px 16px;font-size:13px;" (click)="view = 'new-campaign'" *ngIf="view === 'list'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva campaña
+    </button>
+  </div>
+
+  <!-- ════ LISTA DE CAMPAÑAS ════ -->
+  <div *ngIf="view === 'list'" class="page">
+
+    <!-- Onboarding: solo si no hay campañas y no está cargando -->
+    <div class="camp-onboarding" *ngIf="!loading && campaigns.length === 0 && !loadError">
+      <div class="camp-onboarding__icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.4"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <h3>Bienvenido a Envíos Corporativos</h3>
+      <p>Envía correos personalizados a cientos de personas en pocos clics. Sigue estos 3 pasos:</p>
+      <div class="camp-onboarding__steps">
+        <div class="camp-onboarding__step">
+          <span>1</span>
+          <div><strong>Configura tu servidor SMTP</strong><br>Ve a la pestaña <em>SMTP</em> y agrega tu servidor de correo (Gmail, Outlook, SMTP corporativo).</div>
+        </div>
+        <div class="camp-onboarding__step">
+          <span>2</span>
+          <div><strong>Crea una plantilla de correo</strong><br>Ve a <em>Plantillas</em>, escribe tu mensaje con variables como <code>{{"{{"}}nombre{{"}}"}}</code> para personalizarlo por destinatario.</div>
+        </div>
+        <div class="camp-onboarding__step">
+          <span>3</span>
+          <div><strong>Crea la campaña y envía</strong><br>Haz clic en <em>Nueva campaña</em>, importa tu lista de destinatarios desde Excel y ejecuta el envío.</div>
+        </div>
+      </div>
+      <button class="btn btn--primary" style="margin-top:16px;" (click)="view = 'smtp'">Configurar SMTP</button>
+    </div>
+
+    <div class="load-error" *ngIf="loadError">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {{ loadError }}
+      <button class="btn btn--ghost" style="padding:5px 12px;font-size:12px;" (click)="loadAll()">Reintentar</button>
+    </div>
+    <div class="campaigns-empty" *ngIf="loading && !loadError"><div class="spinner" style="width:32px;height:32px;border-width:3px;"></div></div>
+
+    <div class="campaign-table" *ngIf="!loading && campaigns.length > 0">
+      <div class="campaign-row campaign-row--header">
+        <span>Campaña</span><span>Estado</span><span>Destinatarios</span><span>Progreso</span><span>Fecha</span><span></span>
+      </div>
+      <div *ngFor="let c of campaigns" class="campaign-row" (click)="openSending(c)">
+        <div class="campaign-row__name">
+          <span>{{ c.name }}</span>
+          <span class="campaign-row__sub">{{ c.template_name }} · {{ c.smtp_name }}</span>
+        </div>
+        <span class="badge" [ngClass]="getStatusClass(c.status)">{{ statusLabels[c.status] }}</span>
+        <span class="campaign-row__num">{{ c.sent_count + c.failed_count }}/{{ c.total_recipients }}</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" [style.width.%]="c.progress_pct"></div>
+          <span>{{ c.progress_pct }}%</span>
+        </div>
+        <span class="campaign-row__date">{{ formatDate(c.created_at) }}</span>
+        <button class="btn-icon btn-icon--danger" (click)="$event.stopPropagation(); deleteCampaign(c)" title="Eliminar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ NUEVA CAMPAÑA ════ -->
+  <div *ngIf="view === 'new-campaign'" class="page">
+    <div class="page__header">
+      <div><h1 class="page__title">Nueva Campaña</h1><p class="page__subtitle">Configura el nombre, plantilla, SMTP y destinatarios</p></div>
+      <button class="btn btn--ghost" (click)="view = 'list'">Cancelar</button>
+    </div>
+    <div class="new-campaign-grid">
+      <!-- Configuración -->
+      <div class="card">
+        <h3 class="section-title">Configuración</h3>
+        <div class="form-group"><label>Nombre de la campaña</label><input type="text" [(ngModel)]="campaignForm.name" placeholder="Ej: Newsletter Junio 2026" /></div>
+        <div class="form-group" style="margin-top:14px;"><label>Plantilla de correo</label>
+          <select [(ngModel)]="campaignForm.template"><option [ngValue]="null">Seleccionar plantilla...</option><option *ngFor="let t of templates" [value]="t.id">{{ t.name }}</option></select>
+        </div>
+        <div class="form-group" style="margin-top:14px;"><label>Configuración SMTP</label>
+          <select [(ngModel)]="campaignForm.smtp_config"><option [ngValue]="null">Seleccionar SMTP...</option><option *ngFor="let s of smtpConfigs" [value]="s.id">{{ s.name }} ({{ s.from_email }})</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+          <div class="form-group"><label>Correos por lote</label><input type="number" [(ngModel)]="campaignForm.batch_size" min="1" max="100" /></div>
+          <div class="form-group"><label>Pausa entre lotes (seg)</label><input type="number" [(ngModel)]="campaignForm.delay_seconds" min="0" max="60" /></div>
+        </div>
+        <button class="btn btn--primary" style="width:100%;justify-content:center;margin-top:20px;" (click)="saveCampaign()" [disabled]="saving || !campaignForm.name">
+          <span class="spinner" *ngIf="saving" style="width:13px;height:13px;border-width:2px;"></span>
+          {{ saving ? 'Creando...' : 'Crear campaña' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PANEL DE ENVÍO ════ -->
+  <div *ngIf="view === 'sending' && selectedCampaign" class="page">
+    <div class="page__header">
+      <div>
+        <h1 class="page__title">{{ selectedCampaign.name }}</h1>
+        <p class="page__subtitle">{{ selectedCampaign.template_name }} · {{ selectedCampaign.smtp_name }}</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="badge" [ngClass]="getStatusClass(selectedCampaign.status)">{{ statusLabels[selectedCampaign.status] }}</span>
+        <button class="btn btn--ghost" (click)="backToList()">Volver</button>
+      </div>
+    </div>
+
+    <!-- Progreso -->
+    <div class="sending-progress card">
+      <div class="sending-progress__numbers">
+        <div class="sending-stat"><span class="sending-stat__value text-primary">{{ selectedCampaign.total_recipients }}</span><span class="sending-stat__label">Total</span></div>
+        <div class="sending-stat"><span class="sending-stat__value text-success">{{ selectedCampaign.sent_count }}</span><span class="sending-stat__label">Enviados</span></div>
+        <div class="sending-stat"><span class="sending-stat__value text-danger">{{ selectedCampaign.failed_count }}</span><span class="sending-stat__label">Errores</span></div>
+        <div class="sending-stat"><span class="sending-stat__value">{{ selectedCampaign.total_recipients - selectedCampaign.sent_count - selectedCampaign.failed_count }}</span><span class="sending-stat__label">Pendientes</span></div>
+      </div>
+      <div class="progress-bar-full">
+        <div class="progress-bar-full__fill" [style.width.%]="selectedCampaign.progress_pct" [class.pulsing]="isRunning"></div>
+      </div>
+      <div class="sending-progress__pct">{{ selectedCampaign.progress_pct }}%</div>
+    </div>
+
+    <!-- Controles -->
+    <div class="sending-controls">
+      <button class="btn btn--primary" (click)="start()" *ngIf="canStart && !isRunning" [disabled]="isRunning">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        {{ isPaused ? 'Reanudar' : 'Iniciar envío' }}
+      </button>
+      <button class="btn btn--ghost" (click)="pause()" *ngIf="isRunning">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        Pausar
+      </button>
+      <button class="btn btn--danger" (click)="stop()" *ngIf="isRunning || isPaused">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        Detener
+      </button>
+      <button class="btn btn--ghost" (click)="exportResults()" *ngIf="isCompleted">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exportar resultados Excel
+      </button>
+      <ng-container *ngIf="selectedCampaign.status === 'draft' || selectedCampaign.status === 'ready'">
+        <div class="sending-import">
+          <div class="import-mode-toggle">
+            <button [class.active]="importMode === 'excel'" (click)="importMode = 'excel'">Excel</button>
+            <button [class.active]="importMode === 'manual'" (click)="importMode = 'manual'">Manual</button>
+          </div>
+          <ng-container *ngIf="importMode === 'excel'">
+            <input type="text" [(ngModel)]="importEmailField" placeholder="Columna email" style="width:130px;" class="import-input" />
+            <label class="import-file-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {{ importFile ? importFile.name : 'Seleccionar Excel' }}
+              <input type="file" accept=".xlsx,.xls" (change)="onFileChange($event)" hidden />
+            </label>
+          </ng-container>
+          <ng-container *ngIf="importMode === 'manual'">
+            <textarea [(ngModel)]="manualEmails" placeholder="Un email por línea..." class="import-textarea"></textarea>
+          </ng-container>
+          <button class="btn btn--primary" (click)="importRecipients(selectedCampaign.id)" [disabled]="importing">
+            <span class="spinner" *ngIf="importing" style="width:13px;height:13px;border-width:2px;"></span>
+            {{ importing ? 'Importando...' : 'Importar destinatarios' }}
+          </button>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Logs -->
+    <div class="sending-logs card">
+      <div class="sending-logs__header">
+        <h4>Registro de envíos</h4>
+        <span class="text-muted" style="font-size:12px;">{{ logs.length }} entradas</span>
+      </div>
+      <div class="sending-logs__body">
+        <div *ngFor="let log of logs" class="log-entry" [ngClass]="'log-entry--' + log.level">
+          <span class="log-entry__time">{{ formatDate(log.created_at) }}</span>
+          <span class="log-entry__msg">{{ log.message }}</span>
+        </div>
+        <div *ngIf="logs.length === 0" class="log-empty">Sin registros aún.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PLANTILLAS ════ -->
+  <div *ngIf="view === 'templates'" class="page">
+    <div class="page__header">
+      <div><h1 class="page__title">Plantillas de correo</h1></div>
+    </div>
+    <div class="templates-grid">
+      <!-- Editor de plantilla -->
+      <div class="card">
+        <h3 class="section-title">{{ editingTemplate ? 'Editar plantilla' : 'Nueva plantilla' }}</h3>
+        <div class="form-group"><label>Nombre</label><input type="text" [(ngModel)]="templateForm.name" placeholder="Ej: Newsletter corporativo" /></div>
+        <div class="form-group" style="margin-top:12px;"><label>Asunto — usa variables como {{'{{'}}nombre{{'}}'}}</label><input type="text" [(ngModel)]="templateForm.subject" placeholder="Hola {{'{{'}}nombre{{'}}'}}, te informamos que..." /></div>
+        <div class="form-group" style="margin-top:12px;"><label>Cuerpo HTML</label>
+          <textarea [(ngModel)]="templateForm.html_body" placeholder="<p>Hola {{'{{'}}nombre{{'}}'}}</p><p>Contenido del correo...</p>" style="min-height:160px;font-family:monospace;font-size:12px;"></textarea>
+        </div>
+        <div class="form-group" style="margin-top:12px;"><label>Cuerpo texto plano (opcional)</label>
+          <textarea [(ngModel)]="templateForm.text_body" placeholder="Versión de texto del correo..." style="min-height:60px;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn btn--ghost" *ngIf="editingTemplate" (click)="editingTemplate = null; templateForm = {name:'',subject:'',html_body:'',text_body:''}">Cancelar</button>
+          <button class="btn btn--primary" (click)="saveTemplate()" [disabled]="saving || !templateForm.name">
+            {{ saving ? 'Guardando...' : (editingTemplate ? 'Actualizar' : 'Crear plantilla') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de plantillas -->
+      <div>
+        <div *ngIf="templates.length === 0" class="campaigns-empty"><p>Sin plantillas.</p></div>
+        <div *ngFor="let t of templates" class="template-list-item">
+          <div>
+            <span class="template-list-item__name">{{ t.name }}</span>
+            <span class="template-list-item__subject">{{ t.subject }}</span>
+            <div class="template-list-item__vars">
+              <span *ngFor="let v of t.variables" class="var-chip-sm">{{ v }}</span>
+            </div>
+          </div>
+          <div class="template-list-item__actions">
+            <button class="btn btn--ghost" style="padding:5px 10px;font-size:12px;" (click)="editTemplate(t)">Editar</button>
+            <button class="btn-icon btn-icon--danger" (click)="deleteTemplate(t)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SMTP ════ -->
+  <div *ngIf="view === 'smtp'" class="page">
+    <div class="page__header"><h1 class="page__title">Configuraciones SMTP</h1></div>
+    <div class="templates-grid">
+      <div class="card">
+        <h3 class="section-title">{{ editingSmtp ? 'Editar SMTP' : 'Nueva configuración' }}</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group"><label>Nombre</label><input type="text" [(ngModel)]="smtpForm.name" placeholder="Gmail corporativo" /></div>
+          <div class="form-group"><label>Host SMTP</label><input type="text" [(ngModel)]="smtpForm.host" placeholder="smtp.gmail.com" /></div>
+          <div class="form-group"><label>Puerto</label><input type="number" [(ngModel)]="smtpForm.port" /></div>
+          <div class="form-group"><label>Usuario</label><input type="text" [(ngModel)]="smtpForm.username" /></div>
+          <div class="form-group"><label>Contraseña</label><input type="password" [(ngModel)]="smtpForm.password" /></div>
+          <div class="form-group"><label>Nombre remitente</label><input type="text" [(ngModel)]="smtpForm.from_name" placeholder="OnmiTek Solutions" /></div>
+          <div class="form-group" style="grid-column:span 2"><label>Email remitente</label><input type="email" [(ngModel)]="smtpForm.from_email" placeholder="no-reply@empresa.com" /></div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-text-muted);cursor:pointer;">
+            <input type="checkbox" [(ngModel)]="smtpForm.use_tls" /> TLS
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-text-muted);cursor:pointer;">
+            <input type="checkbox" [(ngModel)]="smtpForm.use_ssl" /> SSL
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-text-muted);cursor:pointer;">
+            <input type="checkbox" [(ngModel)]="smtpForm.is_default" /> Predeterminado
+          </label>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn btn--ghost" *ngIf="editingSmtp" (click)="editingSmtp = null; resetSmtpForm()">Cancelar</button>
+          <button class="btn btn--primary" (click)="saveSMTP()" [disabled]="saving">{{ saving ? 'Guardando...' : (editingSmtp ? 'Actualizar' : 'Guardar') }}</button>
+        </div>
+        <div *ngIf="smtpTestMsg" class="smtp-test-msg" [class.smtp-test-msg--ok]="smtpTestMsg.includes('correctamente')">{{ smtpTestMsg }}</div>
+      </div>
+
+      <div>
+        <div *ngIf="smtpConfigs.length === 0" class="campaigns-empty"><p>Sin configuraciones SMTP.</p></div>
+        <div *ngFor="let s of smtpConfigs" class="smtp-list-item">
+          <div>
+            <span class="smtp-list-item__name">{{ s.name }}</span>
+            <span class="smtp-list-item__sub">{{ s.from_email }} · {{ s.host }}:{{ s.port }}</span>
+            <span class="badge badge--admin" *ngIf="s.is_default" style="font-size:10px;margin-top:4px;">Predeterminado</span>
+          </div>
+          <div class="smtp-list-item__actions">
+            <button class="btn btn--ghost" style="padding:5px 10px;font-size:12px;" (click)="testSMTP(s)" [disabled]="testingSmtp">Test</button>
+            <button class="btn btn--ghost" style="padding:5px 10px;font-size:12px;" (click)="editSMTP(s)">Editar</button>
+            <button class="btn-icon btn-icon--danger" (click)="deleteSMTP(s)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,260 @@
+<div class="docgen-layout fade-in">
+
+  <!-- Header -->
+  <div class="page__header">
+    <div>
+      <h1 class="page__title">Generador de Documentos</h1>
+      <p class="page__subtitle">
+        <ng-container *ngIf="step === 'templates'">Selecciona o descarga una plantilla y genera documentos Word con tus datos</ng-container>
+        <ng-container *ngIf="step === 'data'">Completa los datos para <strong>{{ selectedTemplate?.name }}</strong></ng-container>
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button *ngIf="step !== 'templates'" class="btn btn--ghost" (click)="back()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Volver
+      </button>
+      <button class="btn btn--ghost" [class.btn--primary]="step === 'history'" (click)="step = 'history'; loadHistory()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.56"/></svg>
+        Historial
+      </button>
+      <button *ngIf="step === 'templates'" class="btn btn--ghost" (click)="showLibrary = !showLibrary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Biblioteca
+      </button>
+      <button class="btn btn--primary" (click)="showUploadForm = !showUploadForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Subir plantilla
+      </button>
+    </div>
+  </div>
+
+  <!-- Onboarding: cómo funciona -->
+  <div class="docgen-how card" *ngIf="step === 'templates' && !showLibrary && !showUploadForm && templates.length === 0 && !loading">
+    <h3 class="docgen-how__title">¿Cómo funciona?</h3>
+    <div class="docgen-how__steps">
+      <div class="docgen-how__step">
+        <span class="docgen-how__num">1</span>
+        <div>
+          <strong>Descarga una plantilla de ejemplo</strong>
+          <p>Haz clic en <em>Biblioteca</em> para ver plantillas listas: Certificado Laboral, Paz y Salvo, Carta de Presentación y más.</p>
+        </div>
+      </div>
+      <div class="docgen-how__step">
+        <span class="docgen-how__num">2</span>
+        <div>
+          <strong>Personaliza y sube la plantilla</strong>
+          <p>Abre el .docx descargado en Word, edita el diseño y usa <code>{{"{{"}}variable{{"}}"}}</code> donde quieras datos dinámicos. Luego súbela aquí.</p>
+        </div>
+      </div>
+      <div class="docgen-how__step">
+        <span class="docgen-how__num">3</span>
+        <div>
+          <strong>Genera documentos al instante</strong>
+          <p>Completa los datos manualmente o sube un Excel con cientos de registros. Descarga un .docx o un .zip con todos los documentos.</p>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn--primary" style="margin-top:16px;" (click)="showLibrary = true">
+      Ver plantillas de ejemplo
+    </button>
+  </div>
+
+  <!-- Biblioteca de plantillas de ejemplo -->
+  <div class="docgen-library card" *ngIf="showLibrary && step === 'templates'">
+    <div class="docgen-library__header">
+      <div>
+        <h3>Biblioteca de Plantillas</h3>
+        <p>Descarga cualquier plantilla, personalízala en Word y súbela al sistema. Ya incluyen las variables correctas.</p>
+      </div>
+      <button class="btn-icon" (click)="showLibrary = false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="docgen-library__grid">
+      <div *ngFor="let s of sampleTemplates" class="docgen-library__item" (click)="downloadSample(s.key, s.name)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="docgen-library__name">{{ s.name }}</span>
+        <span class="docgen-library__download">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          .docx
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form nueva plantilla -->
+  <div class="docgen-upload-form card" *ngIf="showUploadForm">
+    <h3 class="docgen-upload-form__title">Subir plantilla Word (.docx)</h3>
+    <p class="docgen-upload-form__hint">
+      Usa variables con formato <code>{{ exampleVar }}</code> en el documento.
+    </p>
+    <div class="docgen-upload-form__fields">
+      <div class="form-group">
+        <label>Nombre de la plantilla</label>
+        <input type="text" [(ngModel)]="newTemplateName" placeholder="Ej: Contrato laboral" />
+      </div>
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <input type="text" [(ngModel)]="newTemplateDesc" placeholder="Descripción breve..." />
+      </div>
+      <div class="docgen-file-drop">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>{{ templateFile ? templateFile.name : 'Arrastra el .docx o haz clic para seleccionar' }}</p>
+        <input type="file" accept=".docx" (change)="onTemplateFileChange($event)" />
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn--ghost" (click)="showUploadForm = false">Cancelar</button>
+      <button class="btn btn--primary" (click)="uploadTemplate()" [disabled]="!templateFile || !newTemplateName || uploadingTemplate">
+        <span class="spinner" *ngIf="uploadingTemplate" style="width:13px;height:13px;border-width:2px;"></span>
+        {{ uploadingTemplate ? 'Subiendo...' : 'Subir plantilla' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── STEP: TEMPLATES ── -->
+  <ng-container *ngIf="step === 'templates'">
+    <div class="docgen-empty" *ngIf="loading">
+      <div class="spinner" style="width:32px;height:32px;border-width:3px;"></div>
+    </div>
+
+    <div class="docgen-empty" *ngIf="!loading && templates.length === 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.25"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <h3>Sin plantillas</h3>
+      <p>Sube tu primera plantilla Word con variables <code>{{ exampleVar }}</code></p>
+    </div>
+
+    <div class="docgen-grid" *ngIf="!loading && templates.length > 0">
+      <div *ngFor="let tmpl of templates" class="template-card" (click)="selectTemplate(tmpl)">
+        <div class="template-card__icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="template-card__body">
+          <h4 class="template-card__name">{{ tmpl.name }}</h4>
+          <p class="template-card__desc">{{ tmpl.description || 'Sin descripción' }}</p>
+          <div class="template-card__meta">
+            <span class="badge badge--admin">{{ tmpl.variable_count }} variables</span>
+            <span class="template-card__date">{{ formatDate(tmpl.created_at) }}</span>
+          </div>
+          <div class="template-card__vars" *ngIf="tmpl.variables.length > 0">
+            <span *ngFor="let v of tmpl.variables.slice(0, 5)" class="var-chip">{{ wrap(v) }}</span>
+            <span *ngIf="tmpl.variables.length > 5" class="var-chip var-chip--more">+{{ tmpl.variables.length - 5 }}</span>
+          </div>
+        </div>
+        <button class="template-card__delete" (click)="deleteTemplate($event, tmpl)" title="Eliminar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── STEP: DATA ── -->
+  <ng-container *ngIf="step === 'data' && selectedTemplate">
+    <div class="docgen-data-layout">
+
+      <!-- Panel izquierdo: datos -->
+      <div class="docgen-data-panel card">
+        <div class="docgen-data-mode">
+          <button [class.active]="dataMode === 'manual'" (click)="dataMode = 'manual'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Manual
+          </button>
+          <button [class.active]="dataMode === 'excel'" (click)="dataMode = 'excel'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Desde Excel
+          </button>
+        </div>
+
+        <!-- Manual -->
+        <div *ngIf="dataMode === 'manual'">
+          <div *ngFor="let v of selectedTemplate.variables; trackBy: trackByVariable" class="form-group" style="margin-bottom:14px;">
+            <label>{{ wrap(v) }}</label>
+            <input type="text" [(ngModel)]="manualData[v]" [placeholder]="'Valor para ' + v" />
+          </div>
+          <button class="btn btn--primary" style="width:100%;justify-content:center;margin-top:8px;" (click)="generateSingle()" [disabled]="generating">
+            <span class="spinner" *ngIf="generating" style="width:13px;height:13px;border-width:2px;"></span>
+            <svg *ngIf="!generating" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            {{ generating ? 'Generando...' : 'Generar DOCX' }}
+          </button>
+        </div>
+
+        <!-- Excel -->
+        <div *ngIf="dataMode === 'excel'">
+          <div class="docgen-file-drop" style="margin-bottom:16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p>{{ excelFile ? excelFile.name : 'Selecciona un archivo Excel (.xlsx)' }}</p>
+            <input type="file" accept=".xlsx,.xls" (change)="onExcelChange($event)" />
+          </div>
+          <div class="docgen-preview" *ngIf="excelPreview">
+            <p class="docgen-preview__info">
+              <strong>{{ excelPreview.total }}</strong> registros detectados · Columnas: {{ excelPreview.columns.join(', ') }}
+            </p>
+            <div class="docgen-preview__table-wrap">
+              <table class="docgen-preview__table">
+                <thead>
+                  <tr><th *ngFor="let col of excelPreview.columns">{{ col }}</th></tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of excelPreview.preview">
+                    <td *ngFor="let col of excelPreview.columns">{{ row[col] }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="docgen-preview__loading" *ngIf="loadingPreview">
+            <div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>
+            <span>Leyendo Excel...</span>
+          </div>
+          <button class="btn btn--primary" style="width:100%;justify-content:center;margin-top:12px;" (click)="generateBulk()" [disabled]="!excelFile || generating">
+            <span class="spinner" *ngIf="generating" style="width:13px;height:13px;border-width:2px;"></span>
+            <svg *ngIf="!generating" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            {{ generating ? 'Generando ZIP...' : 'Generación masiva → ZIP' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel derecho: preview plantilla -->
+      <div class="docgen-preview-panel card">
+        <h4 class="docgen-preview-panel__title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          {{ selectedTemplate.name }}
+        </h4>
+        <p class="docgen-preview-panel__filename">{{ selectedTemplate.filename }}</p>
+        <div class="docgen-preview-panel__vars">
+          <p class="docgen-preview-panel__vars-title">Variables detectadas ({{ selectedTemplate.variables.length }})</p>
+          <div class="docgen-preview-panel__vars-list">
+            <span *ngFor="let v of selectedTemplate.variables" class="var-chip var-chip--large">
+              {{ wrap(v) }}
+              <span *ngIf="dataMode === 'manual' && manualData[v]" class="var-chip__value">→ {{ manualData[v] }}</span>
+            </span>
+          </div>
+        </div>
+        <div class="docgen-preview-panel__info">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Los documentos se generan conservando el formato original de la plantilla Word.</p>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── STEP: HISTORY ── -->
+  <ng-container *ngIf="step === 'history'">
+    <div class="docgen-empty" *ngIf="generations.length === 0">
+      <p>Sin generaciones registradas aún.</p>
+    </div>
+    <div class="docgen-history" *ngIf="generations.length > 0">
+      <div *ngFor="let gen of generations" class="history-row">
+        <div class="history-row__info">
+          <span class="history-row__name">{{ gen.name }}</span>
+          <span class="history-row__template">{{ gen.template_name }}</span>
+        </div>
+        <span class="badge" [ngClass]="getStatusClass(gen.status)">{{ getStatusLabel(gen.status) }}</span>
+        <span class="history-row__records">{{ gen.processed_records }}/{{ gen.total_records }} docs</span>
+        <span class="history-row__date">{{ formatDate(gen.created_at) }}</span>
+      </div>
+    </div>
+  </ng-container>
+
+</div>

@@ -1,0 +1,102 @@
+<div class="login-page">
+  <!-- Background grid -->
+  <div class="login-bg">
+    <div class="login-bg__grid"></div>
+    <div class="login-bg__glow login-bg__glow--1"></div>
+    <div class="login-bg__glow login-bg__glow--2"></div>
+  </div>
+
+  <!-- Card -->
+  <div class="login-card fade-in">
+    <!-- Logo -->
+    <div class="login-card__brand">
+      <div class="login-card__logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="#1e6fff"/>
+          <path d="M8 16L14 10L20 16L14 22L8 16Z" fill="white" opacity="0.9"/>
+          <path d="M16 8L24 16L16 24" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="login-card__name">OmniWorks</h1>
+        <p class="login-card__company">OnmiTek Solutions</p>
+      </div>
+    </div>
+
+    <div class="login-card__divider"></div>
+
+    <h2 class="login-card__title">Iniciar sesión</h2>
+    <p class="login-card__subtitle">Accede a tu espacio de trabajo</p>
+
+    <!-- Error -->
+    <div class="login-alert" *ngIf="error">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ error }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Correo electrónico</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="usuario@empresa.com"
+            autocomplete="email"
+            [class.error]="f['email'].touched && f['email'].invalid"
+          />
+        </div>
+        <span class="form-error" *ngIf="f['email'].touched && f['email'].hasError('required')">El correo es requerido</span>
+        <span class="form-error" *ngIf="f['email'].touched && f['email'].hasError('email')">Correo inválido</span>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group" style="margin-top: 16px;">
+        <label for="password">Contraseña</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            [class.error]="f['password'].touched && f['password'].invalid"
+          />
+          <button type="button" class="input-toggle" (click)="togglePassword()">
+            <svg *ngIf="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg *ngIf="showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <span class="form-error" *ngIf="f['password'].touched && f['password'].hasError('required')">La contraseña es requerida</span>
+      </div>
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        class="btn btn--primary login-btn"
+        [disabled]="loading"
+      >
+        <span class="spinner" *ngIf="loading"></span>
+        <span>{{ loading ? 'Iniciando sesión...' : 'Iniciar sesión' }}</span>
+      </button>
+    </form>
+
+    <p class="login-card__footer">
+      OnmiTek Solutions &bull; <a href="mailto:info@onmiteksolutions.com">info@onmiteksolutions.com</a>
+    </p>
+  </div>
+</div>

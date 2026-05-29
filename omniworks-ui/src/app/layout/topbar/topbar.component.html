@@ -1,0 +1,17 @@
+<header class="topbar">
+  <div class="topbar__left">
+    <h2 class="topbar__title">{{ pageTitle }}</h2>
+  </div>
+
+  <div class="topbar__right">
+    <div class="topbar__user">
+      <div class="topbar__avatar">
+        {{ currentUser?.first_name?.charAt(0) }}{{ currentUser?.last_name?.charAt(0) }}
+      </div>
+      <div class="topbar__user-info">
+        <span class="topbar__user-name">{{ currentUser?.full_name }}</span>
+        <span class="topbar__user-email">{{ currentUser?.email }}</span>
+      </div>
+    </div>
+  </div>
+</header>

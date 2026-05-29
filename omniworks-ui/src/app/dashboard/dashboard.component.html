@@ -1,0 +1,78 @@
+<div class="page fade-in">
+  <!-- Header -->
+  <div class="page__header">
+    <div>
+      <h1 class="page__title">{{ greeting }}, {{ currentUser?.first_name }}.</h1>
+      <p class="page__subtitle">Panel de control — OmniWorks</p>
+    </div>
+    <span class="badge badge--admin" *ngIf="currentUser?.is_admin">Administrador</span>
+  </div>
+
+  <!-- Loading -->
+  <div class="dashboard__loading" *ngIf="loading">
+    <div class="spinner" style="width:32px;height:32px;border-width:3px;"></div>
+    <p>Cargando módulos...</p>
+  </div>
+
+  <!-- Modules grid -->
+  <div class="dashboard__grid" *ngIf="!loading">
+    <button
+      *ngFor="let mod of modules; let i = index"
+      class="module-card"
+      (click)="navigate(mod.route)"
+    >
+      <div class="module-card__icon-wrap" [style.background]="getModuleGradient(i)">
+        <ng-container [ngSwitch]="getModuleIcon(mod.key)">
+          <svg *ngSwitchCase="'mail'" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <svg *ngSwitchCase="'file-text'" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <svg *ngSwitchDefault width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          </svg>
+        </ng-container>
+      </div>
+
+      <div class="module-card__body">
+        <h3 class="module-card__name">{{ mod.name }}</h3>
+        <p class="module-card__desc">{{ mod.description }}</p>
+      </div>
+
+      <div class="module-card__arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </div>
+    </button>
+
+    <!-- Empty state -->
+    <div class="dashboard__empty" *ngIf="modules.length === 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      </svg>
+      <h3>Sin módulos activos</h3>
+      <p>Contacta al administrador para habilitar módulos en tu cuenta.</p>
+    </div>
+  </div>
+
+  <!-- Admin quick access -->
+  <div class="dashboard__admin-section" *ngIf="!loading && currentUser?.is_admin">
+    <h3 class="dashboard__section-title">Administración</h3>
+    <div class="dashboard__admin-grid">
+      <button class="admin-card" (click)="navigate('/admin/users')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <div>
+          <span class="admin-card__label">Gestión de Usuarios</span>
+          <span class="admin-card__desc">Crear, editar y controlar accesos</span>
+        </div>
+        <svg class="admin-card__arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

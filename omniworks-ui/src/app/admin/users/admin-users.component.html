@@ -1,0 +1,225 @@
+<div class="page fade-in">
+
+  <!-- Header -->
+  <div class="page__header">
+    <div>
+      <h1 class="page__title">Gestión de Usuarios</h1>
+      <p class="page__subtitle">{{ users.length }} usuarios · {{ activeCount }} activos · {{ adminCount }} administradores</p>
+    </div>
+    <button class="btn btn--primary" (click)="openCreate()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nuevo usuario
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="users-filters">
+    <div class="users-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()" placeholder="Buscar por nombre, email o usuario..." />
+    </div>
+    <div class="users-filter-group">
+      <button [class.active]="filterRole === 'all'" (click)="filterRole = 'all'; applyFilters()">Todos</button>
+      <button [class.active]="filterRole === 'admin'" (click)="filterRole = 'admin'; applyFilters()">Admins</button>
+      <button [class.active]="filterRole === 'user'" (click)="filterRole = 'user'; applyFilters()">Usuarios</button>
+    </div>
+    <div class="users-filter-group">
+      <button [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'; applyFilters()">Todos</button>
+      <button [class.active]="filterStatus === 'active'" (click)="filterStatus = 'active'; applyFilters()">Activos</button>
+      <button [class.active]="filterStatus === 'inactive'" (click)="filterStatus = 'inactive'; applyFilters()">Inactivos</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="users-loading" *ngIf="loading">
+    <div class="spinner" style="width:32px;height:32px;border-width:3px;"></div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="users-table" *ngIf="!loading">
+    <div class="users-table__header">
+      <span>Usuario</span><span>Rol</span><span>Estado</span><span>Registrado</span><span>Acciones</span>
+    </div>
+
+    <div *ngIf="filteredUsers.length === 0" class="users-empty">
+      <p>Sin usuarios que coincidan con los filtros.</p>
+    </div>
+
+    <div *ngFor="let user of filteredUsers" class="user-row" [class.user-row--inactive]="!user.is_active">
+      <!-- Avatar + info -->
+      <div class="user-row__identity">
+        <div class="user-row__avatar">{{ user.first_name.charAt(0) }}{{ user.last_name.charAt(0) }}</div>
+        <div class="user-row__info">
+          <span class="user-row__name">
+            {{ user.full_name }}
+            <span class="user-row__you" *ngIf="isCurrentUser(user)">· Tú</span>
+          </span>
+          <span class="user-row__email">{{ user.email }}</span>
+          <span class="user-row__username">@{{ user.username }}</span>
+        </div>
+      </div>
+
+      <!-- Rol -->
+      <span class="badge" [class.badge--admin]="user.is_admin" [class.badge--user]="!user.is_admin">
+        {{ user.is_admin ? 'Administrador' : 'Usuario' }}
+      </span>
+
+      <!-- Estado con toggle -->
+      <button
+        class="status-toggle"
+        [class.status-toggle--active]="user.is_active"
+        (click)="toggleActive(user)"
+        [disabled]="isCurrentUser(user)"
+        [title]="isCurrentUser(user) ? 'No puedes desactivar tu propia cuenta' : (user.is_active ? 'Click para desactivar' : 'Click para activar')"
+      >
+        <span class="status-toggle__dot"></span>
+        {{ user.is_active ? 'Activo' : 'Inactivo' }}
+      </button>
+
+      <!-- Fecha -->
+      <span class="user-row__date">{{ formatDate(user.created_at) }}</span>
+
+      <!-- Acciones -->
+      <div class="user-row__actions">
+        <button class="action-btn" (click)="openEdit(user)" title="Editar usuario">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="action-btn" (click)="openModules(user)" title="Permisos de módulos" *ngIf="!user.is_admin">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </button>
+        <button class="action-btn" (click)="openChangePassword(user)" title="Cambiar contraseña">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL CREAR ════ -->
+<div class="modal-backdrop" *ngIf="modal === 'create'" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3>Nuevo usuario</h3>
+      <button class="modal__close" (click)="closeModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <form [formGroup]="createForm" (ngSubmit)="submitCreate()" novalidate>
+      <div class="modal__body">
+        <div class="modal-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" formControlName="first_name" placeholder="Juan" [class.error]="createForm.get('first_name')?.touched && createForm.get('first_name')?.invalid" /></div>
+          <div class="form-group"><label>Apellido</label><input type="text" formControlName="last_name" placeholder="Pérez" [class.error]="createForm.get('last_name')?.touched && createForm.get('last_name')?.invalid" /></div>
+          <div class="form-group" style="grid-column:span 2"><label>Correo electrónico</label><input type="email" formControlName="email" placeholder="juan@empresa.com" [class.error]="createForm.get('email')?.touched && createForm.get('email')?.invalid" /></div>
+          <div class="form-group"><label>Nombre de usuario</label><input type="text" formControlName="username" placeholder="juanperez" /></div>
+          <div class="form-group"><label>Rol</label>
+            <select formControlName="role">
+              <option value="user">Usuario</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Contraseña</label><input type="password" formControlName="password" placeholder="Mínimo 8 caracteres" /></div>
+          <div class="form-group"><label>Confirmar contraseña</label><input type="password" formControlName="confirm_password" /></div>
+        </div>
+        <div class="modal__error" *ngIf="modalError">{{ modalError }}</div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="saving">
+          <span class="spinner" *ngIf="saving" style="width:13px;height:13px;border-width:2px;"></span>
+          {{ saving ? 'Creando...' : 'Crear usuario' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════ MODAL EDITAR ════ -->
+<div class="modal-backdrop" *ngIf="modal === 'edit'" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3>Editar usuario — {{ selectedUser?.full_name }}</h3>
+      <button class="modal__close" (click)="closeModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <form [formGroup]="editForm" (ngSubmit)="submitEdit()" novalidate>
+      <div class="modal__body">
+        <div class="modal-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" formControlName="first_name" /></div>
+          <div class="form-group"><label>Apellido</label><input type="text" formControlName="last_name" /></div>
+          <div class="form-group"><label>Nombre de usuario</label><input type="text" formControlName="username" /></div>
+          <div class="form-group"><label>Rol</label>
+            <select formControlName="role">
+              <option value="user">Usuario</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" formControlName="is_active" [disabled]="isCurrentUser(selectedUser!)" />
+              Cuenta activa
+            </label>
+          </div>
+        </div>
+        <div class="modal__error" *ngIf="modalError">{{ modalError }}</div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar cambios' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════ MODAL CONTRASEÑA ════ -->
+<div class="modal-backdrop" *ngIf="modal === 'password'" (click)="closeModal()">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3>Cambiar contraseña — {{ selectedUser?.first_name }}</h3>
+      <button class="modal__close" (click)="closeModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <form [formGroup]="passwordForm" (ngSubmit)="submitChangePassword()" novalidate>
+      <div class="modal__body">
+        <div class="form-group"><label>Nueva contraseña</label><input type="password" formControlName="new_password" placeholder="Mínimo 8 caracteres" /></div>
+        <div class="form-group" style="margin-top:14px;"><label>Confirmar contraseña</label><input type="password" formControlName="confirm_password" /></div>
+        <div class="modal__error" *ngIf="modalError" style="margin-top:12px;">{{ modalError }}</div>
+        <div class="modal__success" *ngIf="modalSuccess" style="margin-top:12px;">{{ modalSuccess }}</div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="saving">{{ saving ? 'Actualizando...' : 'Actualizar contraseña' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════ MODAL MÓDULOS ════ -->
+<div class="modal-backdrop" *ngIf="modal === 'modules'" (click)="closeModal()">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3>Módulos — {{ selectedUser?.first_name }} {{ selectedUser?.last_name }}</h3>
+      <button class="modal__close" (click)="closeModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="modal__hint">Activa o desactiva el acceso a cada módulo para este usuario.</p>
+      <div *ngIf="loadingModules" style="text-align:center;padding:20px;"><div class="spinner" style="width:24px;height:24px;border-width:2px;margin:auto;"></div></div>
+      <div *ngIf="!loadingModules" class="module-perms">
+        <div *ngFor="let mod of allModules" class="module-perm-item">
+          <div class="module-perm-item__info">
+            <span class="module-perm-item__name">{{ mod.name }}</span>
+            <span class="module-perm-item__desc">{{ mod.route }}</span>
+          </div>
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              [checked]="isModuleEnabled(mod.id)"
+              (change)="toggleModule(mod.id, $any($event.target).checked)"
+            />
+            <span class="toggle-switch__track">
+              <span class="toggle-switch__thumb"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--primary" (click)="closeModal()">Listo</button>
+    </div>
+  </div>
+</div>
