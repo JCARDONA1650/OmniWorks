@@ -7,11 +7,13 @@ import { ShellComponent } from './layout/shell/shell.component';
 import { LoginComponent } from './auth/login/login.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { VoiceNotesComponent } from './notes/voice-notes/voice-notes.component';
+import { LicenseExpiredComponent } from './license-expired/license-expired.component';
 import { DocGeneratorComponent } from './doc-generator/generator/doc-generator.component';
 import { CampaignsMainComponent } from './email-campaigns/list/campaigns-main.component';
 import { AdminUsersComponent } from './admin/users/admin-users.component';
 
 const routes: Routes = [
+  { path: 'license-expired', component: LicenseExpiredComponent },
   { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
   {
     path: '',

@@ -31,6 +31,9 @@ import { CampaignsMainComponent } from './email-campaigns/list/campaigns-main.co
 // Admin
 import { AdminUsersComponent } from './admin/users/admin-users.component';
 
+// License
+import { LicenseExpiredComponent } from './license-expired/license-expired.component';
+
 
 @NgModule({
   declarations: [
@@ -44,6 +47,7 @@ import { AdminUsersComponent } from './admin/users/admin-users.component';
     DocGeneratorComponent,
     CampaignsMainComponent,
     AdminUsersComponent,
+    LicenseExpiredComponent,
   ],
   imports: [
     BrowserModule,

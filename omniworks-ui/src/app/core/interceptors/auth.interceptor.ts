@@ -5,6 +5,7 @@ import {
 } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject, TimeoutError } from 'rxjs';
 import { catchError, filter, switchMap, take, timeout } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 const REQUEST_TIMEOUT_MS = 8000; // 8 segundos máximo por petición
@@ -17,7 +18,7 @@ export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject = new BehaviorSubject<RefreshState>(null);
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const token = this.authService.accessToken;
@@ -36,6 +37,14 @@ export class AuthInterceptor implements HttpInterceptor {
         }
 
         if (error instanceof HttpErrorResponse) {
+          if (error.status === 402) {
+            const body = error.error;
+            if (body?.expiration_date) {
+              sessionStorage.setItem('license_expiration', body.expiration_date);
+            }
+            this.router.navigate(['/license-expired']);
+            return throwError(() => error);
+          }
           if (error.status === 401 && !req.url.includes('/auth/login/') && !req.url.includes('/auth/refresh/')) {
             return this.handle401(authReq, next);
           }

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 class Module(models.Model):
@@ -43,3 +44,31 @@ class ModulePermission(models.Model):
     def __str__(self):
         status = 'habilitado' if self.is_enabled else 'deshabilitado'
         return f'{self.user.email} — {self.module.name} ({status})'
+
+
+class LicenseConfig(models.Model):
+    """
+    Configuración de licencia del sistema. Solo debe existir un registro.
+    Si la fecha de vencimiento es superada, el acceso al API queda bloqueado.
+    """
+    client_name = models.CharField('Nombre del cliente', max_length=200)
+    expiration_date = models.DateField('Fecha de vencimiento')
+    notes = models.TextField('Notas internas', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'license_config'
+        verbose_name = 'Licencia'
+        verbose_name_plural = 'Configuración de Licencia'
+
+    def __str__(self):
+        return f'{self.client_name} — vence {self.expiration_date}'
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now().date() > self.expiration_date
+
+    @property
+    def days_remaining(self) -> int:
+        return (self.expiration_date - timezone.now().date()).days
